@@ -21,6 +21,7 @@ db.connect((err) => {
   console.log("Connected to database");
 });
 
+// Rota para criar novo usuário (signup)
 app.post("/signup", (req, res) => {
   const { email, password, name, phone } = req.body;
   const userSql =
@@ -36,6 +37,7 @@ app.post("/signup", (req, res) => {
   });
 });
 
+// Rota de login
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   const loginSql = "SELECT * FROM usuario WHERE email = ? AND senha = ?";
@@ -53,6 +55,106 @@ app.post("/login", (req, res) => {
   });
 });
 
+// Rota para adicionar uma nova loja
+app.post("/loja", (req, res) => {
+  const { nome, telefone, categoria, posicao_x, posicao_y } = req.body;
+  const lojaSql =
+    "INSERT INTO loja (nome, telefone, categoria, posicao_x, posicao_y) VALUES (?, ?, ?, ?, ?)";
+  const lojaValues = [nome, telefone, categoria, posicao_x, posicao_y];
+
+  db.query(lojaSql, lojaValues, (err, result) => {
+    if (err) {
+      console.error("Erro ao adicionar loja:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    res
+      .status(201)
+      .json({
+        message: "Loja adicionada com sucesso",
+        lojaId: result.insertId,
+      });
+  });
+});
+
+// Rota para buscar todas as lojas
+app.get("/lojas", (req, res) => {
+  const lojasSql = "SELECT * FROM loja";
+  db.query(lojasSql, (err, results) => {
+    if (err) {
+      console.error("Erro ao buscar lojas:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    res.status(200).json(results);
+  });
+});
+
+// Rota para adicionar um novo produto
+app.post("/produto", (req, res) => {
+  const { nome, descricao, id_loja } = req.body;
+  const produtoSql =
+    "INSERT INTO produto (nome, descricao, id_loja) VALUES (?, ?, ?)";
+  const produtoValues = [nome, descricao, id_loja];
+
+  db.query(produtoSql, produtoValues, (err, result) => {
+    if (err) {
+      console.error("Erro ao adicionar produto:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    res
+      .status(201)
+      .json({
+        message: "Produto adicionado com sucesso",
+        produtoId: result.insertId,
+      });
+  });
+});
+
+// Rota para buscar todos os produtos
+app.get("/produtos", (req, res) => {
+  const produtosSql = "SELECT * FROM produto";
+  db.query(produtosSql, (err, results) => {
+    if (err) {
+      console.error("Erro ao buscar produtos:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    res.status(200).json(results);
+  });
+});
+
+// Rota para adicionar um novo dispositivo
+app.post("/dispositivo", (req, res) => {
+  const { nome, descricao, latitude, longitude, altura } = req.body;
+  const dispositivoSql =
+    "INSERT INTO dispositivo (nome, descricao, latitude, longitude, altura) VALUES (?, ?, ?, ?, ?)";
+  const dispositivoValues = [nome, descricao, latitude, longitude, altura];
+
+  db.query(dispositivoSql, dispositivoValues, (err, result) => {
+    if (err) {
+      console.error("Erro ao adicionar dispositivo:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    res
+      .status(201)
+      .json({
+        message: "Dispositivo adicionado com sucesso",
+        dispositivoId: result.insertId,
+      });
+  });
+});
+
+// Rota para buscar todos os dispositivos
+app.get("/dispositivos", (req, res) => {
+  const dispositivosSql = "SELECT * FROM dispositivo";
+  db.query(dispositivosSql, (err, results) => {
+    if (err) {
+      console.error("Erro ao buscar dispositivos:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    res.status(200).json(results);
+  });
+});
+
+// Rota para inserir pedido (já existente)
 app.post("/pedido", (req, res) => {
   const {
     id_usuario,
@@ -103,6 +205,7 @@ app.post("/pedido", (req, res) => {
   });
 });
 
+// Função auxiliar para inserir um novo pedido
 function inserirPedido(id_usuario, id_loja, endereco_entrega, produtos, res) {
   const pedidoSql =
     "INSERT INTO pedido (id_usuario, id_loja, data_hora, status, endereco_entrega) VALUES (?, ?, NOW(), ?, ?)";
@@ -178,45 +281,7 @@ function inserirPedido(id_usuario, id_loja, endereco_entrega, produtos, res) {
   });
 }
 
-app.get("/pedido/:id", (req, res) => {
-  const pedidoId = req.params.id;
-  const pedidoSql = `
-        SELECT p.id, p.data_hora, p.status, p.endereco_entrega, 
-               u.nome AS nome_usuario, l.nome AS nome_loja, 
-               GROUP_CONCAT(pr.nome SEPARATOR ', ') AS produtos
-        FROM pedido p
-        JOIN usuario u ON p.id_usuario = u.id
-        JOIN loja l ON p.id_loja = l.id
-        JOIN item_pedido ip ON p.id = ip.id_pedido
-        JOIN produto pr ON ip.id_produto = pr.id
-        WHERE p.id = ?
-        GROUP BY p.id;
-    `;
-
-  db.query(pedidoSql, [pedidoId], (err, result) => {
-    if (err) {
-      return res.status(500).json({ message: err.message });
-    }
-
-    if (result.length === 0) {
-      return res.status(404).json({ message: "Pedido não encontrado" });
-    }
-
-    res.status(200).json(result[0]);
-  });
-});
-
-app.get("/lojas", (req, res) => {
-  const sql = "SELECT id, nome, telefone, categoria FROM loja";
-  db.query(sql, (err, results) => {
-    if (err) {
-      console.error("Erro ao buscar lojas:", err.message);
-      return res.status(500).json({ message: err.message });
-    }
-    res.status(200).json(results);
-  });
-});
-
+// Inicializar o servidor
 app.listen(3001, () => {
   console.log("Server running on port 3001");
 });
