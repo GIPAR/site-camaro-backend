@@ -67,12 +67,10 @@ app.post("/loja", (req, res) => {
       console.error("Erro ao adicionar loja:", err.message);
       return res.status(500).json({ message: err.message });
     }
-    res
-      .status(201)
-      .json({
-        message: "Loja adicionada com sucesso",
-        lojaId: result.insertId,
-      });
+    res.status(201).json({
+      message: "Loja adicionada com sucesso",
+      lojaId: result.insertId,
+    });
   });
 });
 
@@ -90,22 +88,19 @@ app.get("/lojas", (req, res) => {
 
 // Rota para adicionar um novo produto
 app.post("/produto", (req, res) => {
-  const { nome, descricao, id_loja } = req.body;
-  const produtoSql =
-    "INSERT INTO produto (nome, descricao, id_loja) VALUES (?, ?, ?)";
-  const produtoValues = [nome, descricao, id_loja];
+  const { nome, descricao } = req.body;
+  const produtoSql = "INSERT INTO produto (nome, descricao) VALUES (?, ?)";
+  const produtoValues = [nome, descricao];
 
   db.query(produtoSql, produtoValues, (err, result) => {
     if (err) {
       console.error("Erro ao adicionar produto:", err.message);
       return res.status(500).json({ message: err.message });
     }
-    res
-      .status(201)
-      .json({
-        message: "Produto adicionado com sucesso",
-        produtoId: result.insertId,
-      });
+    res.status(201).json({
+      message: "Produto adicionado com sucesso",
+      produtoId: result.insertId,
+    });
   });
 });
 
@@ -123,22 +118,20 @@ app.get("/produtos", (req, res) => {
 
 // Rota para adicionar um novo dispositivo
 app.post("/dispositivo", (req, res) => {
-  const { nome, descricao, latitude, longitude, altura } = req.body;
+  const { nome, ip, permissao_acesso, tipo } = req.body;
   const dispositivoSql =
-    "INSERT INTO dispositivo (nome, descricao, latitude, longitude, altura) VALUES (?, ?, ?, ?, ?)";
-  const dispositivoValues = [nome, descricao, latitude, longitude, altura];
+    "INSERT INTO dispositivo (nome, ip, permissao_acesso, tipo) VALUES (?, ?, ?, ?)";
+  const dispositivoValues = [nome, ip, permissao_acesso, tipo];
 
   db.query(dispositivoSql, dispositivoValues, (err, result) => {
     if (err) {
       console.error("Erro ao adicionar dispositivo:", err.message);
       return res.status(500).json({ message: err.message });
     }
-    res
-      .status(201)
-      .json({
-        message: "Dispositivo adicionado com sucesso",
-        dispositivoId: result.insertId,
-      });
+    res.status(201).json({
+      message: "Dispositivo adicionado com sucesso",
+      dispositivoId: result.insertId,
+    });
   });
 });
 
@@ -154,132 +147,78 @@ app.get("/dispositivos", (req, res) => {
   });
 });
 
-// Rota para inserir pedido (já existente)
+/*
+
+
+*/
 app.post("/pedido", (req, res) => {
   const {
     id_usuario,
-    nome_loja,
-    telefone_loja,
-    categoria_loja,
+    id_loja,
+    id_dispositivo,
     endereco_entrega,
     produtos,
   } = req.body;
   console.log("Recebido pedido:", req.body);
 
-  const verificarLojaSql =
-    "SELECT id FROM loja WHERE nome = ? AND telefone = ? AND categoria = ?";
-  const verificarLojaValues = [nome_loja, telefone_loja, categoria_loja];
+  const pedidoSql =
+    "INSERT INTO pedido (id_usuario, id_loja, id_dispositivo, data_hora, status, endereco_entrega) VALUES (?, ?, ?, NOW(), ?, ?)";
+  const pedidoValues = [
+    id_usuario,
+    id_loja,
+    id_dispositivo,
+    "Pendente",
+    endereco_entrega,
+  ];
 
-  db.query(verificarLojaSql, verificarLojaValues, (err, results) => {
+  db.query(pedidoSql, pedidoValues, (err, result) => {
     if (err) {
-      console.error("Erro ao verificar loja:", err.message);
+      console.error("Erro ao adicionar pedido:", err.message);
       return res.status(500).json({ message: err.message });
     }
-
-    let idLojaGerado;
-    if (results.length > 0) {
-      // Loja já existe, use o ID existente
-      idLojaGerado = results[0].id;
-      inserirPedido(id_usuario, idLojaGerado, endereco_entrega, produtos, res);
-    } else {
-      // Inserir nova loja
-      const lojaSql =
-        "INSERT INTO loja (nome, telefone, categoria, posicao_x, posicao_y) VALUES (?, ?, ?, ?, ?)";
-      const lojaValues = [nome_loja, telefone_loja, categoria_loja, "0", "0"];
-
-      db.query(lojaSql, lojaValues, (err, result) => {
-        if (err) {
-          console.error("Erro ao inserir loja:", err.message);
-          return res.status(500).json({ message: err.message });
-        }
-        idLojaGerado = result.insertId;
-        inserirPedido(
-          id_usuario,
-          idLojaGerado,
-          endereco_entrega,
-          produtos,
-          res
-        );
-      });
-    }
+    const id_pedido = result.insertId;
+    inserirProdutos(id_pedido, produtos, res);
+    res.status(201).json({
+      message: "Pedido efetuado com sucesso",
+      pedidoId: id_pedido,
+    });
   });
 });
 
 // Função auxiliar para inserir um novo pedido
-function inserirPedido(id_usuario, id_loja, endereco_entrega, produtos, res) {
-  const pedidoSql =
-    "INSERT INTO pedido (id_usuario, id_loja, data_hora, status, endereco_entrega) VALUES (?, ?, NOW(), ?, ?)";
-  const pedidoValues = [id_usuario, id_loja, "Pendente", endereco_entrega];
+function inserirProdutos(id_pedido, produtos, res) {
+  const produtoSql =
+    "INSERT INTO item_pedido (id_pedido, id_produto, quantidade) VALUES ?";
 
-  db.query(pedidoSql, pedidoValues, (err, result) => {
+  const produtoValues = produtos.map((produto) => [
+    id_pedido,
+    produto.id,
+    produto.quantidade,
+  ]);
+
+  db.query(produtoSql, [produtoValues], (err) => {
     if (err) {
-      console.error("Erro ao inserir pedido:", err.message);
+      console.error("Erro ao inserir produtos:", err.message);
       return res.status(500).json({ message: err.message });
     }
-
-    const pedidoId = result.insertId;
-    console.log("Pedido inserido com ID:", pedidoId);
-
-    const inserirProdutosEItens = produtos.map((produto) => {
-      return new Promise((resolve, reject) => {
-        const verificarProdutoSql = "SELECT id FROM produto WHERE nome = ?";
-        db.query(verificarProdutoSql, [produto.nome], (err, results) => {
-          if (err) {
-            return reject(err);
-          }
-
-          let idProdutoGerado;
-          if (results.length > 0) {
-            // Produto já existe, use o ID existente
-            idProdutoGerado = results[0].id;
-            resolve([pedidoId, idProdutoGerado, produto.quantidade]);
-          } else {
-            // Inserir novo produto
-            const produtoSql =
-              "INSERT INTO produto (nome, descricao) VALUES (?, ?)";
-            db.query(
-              produtoSql,
-              [produto.nome, produto.descricao],
-              (err, result) => {
-                if (err) {
-                  return reject(err);
-                }
-                idProdutoGerado = result.insertId;
-                resolve([pedidoId, idProdutoGerado, produto.quantidade]);
-              }
-            );
-          }
-        });
-      });
-    });
-
-    Promise.all(inserirProdutosEItens)
-      .then((itemPedidoValues) => {
-        const itemPedidoSql =
-          "INSERT INTO item_pedido (id_pedido, id_produto, quantidade) VALUES ?";
-        db.query(itemPedidoSql, [itemPedidoValues], (err, result) => {
-          if (err) {
-            console.error("Erro ao inserir itens do pedido:", err.message);
-            return res.status(500).json({ message: err.message });
-          }
-
-          res
-            .status(201)
-            .json({
-              pedidoId,
-              message: "Pedido e itens do pedido adicionados com sucesso",
-            });
-        });
-      })
-      .catch((err) => {
-        console.error(
-          "Erro ao inserir produtos e itens do pedido:",
-          err.message
-        );
-        res.status(500).json({ message: err.message });
-      });
+    console.log("Produtos inseridos com sucesso para o pedido:", id_pedido);
   });
 }
+
+
+/**
+ * TODO: Adicionar joins para obter os dados dos produtos e das lojas
+ */
+app.get("/pedidos", (req, res) => {
+  const pedidosSql = "SELECT * FROM pedido";
+  db.query(pedidosSql, (err, results) => {
+    if (err) {
+      console.error("Erro ao buscar produtos:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    res.status(200).json(results);
+  });
+});
 
 // Inicializar o servidor
 app.listen(3001, () => {
