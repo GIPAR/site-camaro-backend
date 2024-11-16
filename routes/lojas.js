@@ -97,7 +97,7 @@ router.get("/:id_loja", (req, res, next) => {
           });
         }
         const response = {
-          lojaCriada: {
+          loja: {
             id: result[0].id,
             nome: result[0].nome,
             telefone: result[0].telefone,
@@ -137,7 +137,7 @@ router.patch("/", (req, res, next) => {
         req.body.categoria,
         req.body.posicao_x,
         req.body.posicao_y,
-        req.body.id_loja,
+        req.body.id,
       ],
       (error, result, field) => {
         conn.release();

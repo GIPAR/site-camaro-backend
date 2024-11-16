@@ -76,8 +76,8 @@ router.get('/:id_produto', (req, res, next) => {
                     })
                 }
                 const response = {
-                    produtoCriado: {
-                        id_produto: result[0].id,
+                    produto: {
+                        id: result[0].id,
                         nome: result[0].nome,
                         descricao: result[0].descricao,
                         request: {
@@ -98,14 +98,14 @@ router.patch('/', (req, res, next) => {
     mysql.getConnection((error, conn) => { // <-- Fechamento correto do parêntese
         if (error) { return res.status(500).send({ error: error }); }
         conn.query(
-            `UPDATE PRODUTO 
+            `UPDATE produto
                 SET nome        = ?,
                     descricao   = ? 
              WHERE  id  = ?`,
             [
                 req.body.nome, 
                 req.body.descricao,
-                req.body.id_produto
+                req.body.id
             ],
             (error, result, field) => {
                 conn.release();
@@ -113,7 +113,7 @@ router.patch('/', (req, res, next) => {
                 const response = {
                     mensagem: 'Produto atualizado com sucesso',
                     produtoAtualizado: {
-                        id_produto: result.id,
+                        id: result.id,
                         nome: req.body.nome,
                         descricao: req.body.descricao,
                         request: {

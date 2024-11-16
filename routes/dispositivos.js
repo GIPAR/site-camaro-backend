@@ -126,7 +126,7 @@ router.patch("/", (req, res, next) => {
         req.body.IP,
         req.body.permissao_acesso,
         req.body.tipo,
-        req.body.id_dispositivo,
+        req.body.id,
       ],
       (error, result, field) => {
         conn.release();
