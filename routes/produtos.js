@@ -14,13 +14,13 @@ router.get('/', (req, res, next) => {
                     quantidade: result.length,
                     produtos: result.map(prod => {
                         return {
-                            id_produto: prod.id,
+                            id: prod.id,
                             nome: prod.nome,
                             descricao: prod.descricao,
                             request: {
                                 tipo: 'GET',
                                 description: 'Retorna todos os produtos',
-                                url: 'http://localhost:3000/produtos/' + prod.id
+                                url: 'http://localhost:3001/produtos/' + prod.id
                             }
                         }
                     })
@@ -36,7 +36,7 @@ router.post('/', (req, res, next) => {
     mysql.getConnection((error, conn) => {
         if (error) { return res.status(500).send({ error: error }); }
         conn.query(
-            'INSERT INTO PRODUTO (nome, descricao) VALUES (?, ?)',
+            'INSERT INTO produto (nome, descricao) VALUES (?, ?)',
             [req.body.nome, req.body.descricao],
             (error, result, field) => {
                 conn.release();
@@ -50,7 +50,7 @@ router.post('/', (req, res, next) => {
                         request: {
                             tipo: 'GET',
                             description: 'Insere um produto',
-                            url: 'http://localhost:3000/produtos'
+                            url: 'http://localhost:3001/produtos'
                         }
                     }
                 }   
@@ -83,7 +83,7 @@ router.get('/:id_produto', (req, res, next) => {
                         request: {
                             tipo: 'GET',
                             descricao: 'Retorna os detalhes de um produto específico',
-                            url: 'http://localhost:3000/produtos/' +  result[0].id
+                            url: 'http://localhost:3001/produtos/' +  result[0].id
                         }
                     }
                 }
@@ -119,7 +119,7 @@ router.patch('/', (req, res, next) => {
                         request: {
                             tipo: 'PATCH',
                             description: '',
-                            url: 'http://localhost:3000/produtos/' + req.body.id_produto
+                            url: 'http://localhost:3001/produtos/' + req.body.id_produto
                         }
                     }
                 }
@@ -144,7 +144,7 @@ router.delete('/', (req, res, next) => {
                     request: {
                         tipo: 'DELETE',
                         descricao: 'Exclusão de produto',
-                        url: 'http://localhost:3000/produtos',
+                        url: 'http://localhost:3001/produtos',
 
                     }
                 }

@@ -3,6 +3,8 @@ const app = express();
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 
+const rotaLojas = require('./routes/lojas');
+const rotaDispositivos = require('./routes/dispositivos');
 const rotaProdutos = require('./routes/produtos');
 const rotaPedidos = require('./routes/pedidos');
 const rotaUsuarios = require('./routes/usuarios');
@@ -14,8 +16,8 @@ app.use(bodyParser.json()); // json de entrada no body
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header(
-        'Access-Control-Allow-Header', 
-        'Origin, X-Requested-With, Content-type, Accept, Authorization'
+        'Access-Control-Allow-Headers', 
+        'Origin, X-Requested-With, Content-Type, Accept, Authorization'
     );
 
     if (req.method === 'OPTIONS') {
@@ -26,6 +28,8 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use('/lojas', rotaLojas);
+app.use('/dispositivos', rotaDispositivos);
 app.use('/produtos', rotaProdutos);
 app.use('/pedidos', rotaPedidos);
 app.use('/usuarios', rotaUsuarios);
