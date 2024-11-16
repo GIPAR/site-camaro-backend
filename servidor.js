@@ -147,18 +147,43 @@ app.get("/dispositivos", (req, res) => {
   });
 });
 
-/*
+// Rota para buscar um pedido por ID
+app.get("/pedido/:id", (req, res) => {
+  const id_pedido = req.params.id;
+  const pedidoSql = `
+  SELECT 
+    p.id, 
+    p.id_usuario, 
+    p.id_loja, 
+    p.id_dispositivo, 
+    p.data_hora, 
+    p.status, 
+    p.endereco_entrega, 
+    (
+      SELECT GROUP_CONCAT(pr.nome) 
+      FROM produto pr 
+      INNER JOIN item_pedido ip 
+      ON pr.id = ip.id_produto 
+      WHERE ip.id_pedido = p.id
+    ) AS produtos 
+  FROM pedido p 
+  WHERE p.id = ?`;
+  db.query(pedidoSql, [id_pedido], (err, result) => {
+    if (err) {
+      console.error("Erro ao buscar pedido:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    if (result.length > 0) {
+      res.status(200).json(result[0]);
+    } else {
+      res.status(404).json({ message: "Pedido não encontrado" });
+    }
+  });
+});
 
-
-*/
 app.post("/pedido", (req, res) => {
-  const {
-    id_usuario,
-    id_loja,
-    id_dispositivo,
-    endereco_entrega,
-    produtos,
-  } = req.body;
+  const { id_usuario, id_loja, id_dispositivo, endereco_entrega, produtos } =
+    req.body;
   console.log("Recebido pedido:", req.body);
 
   const pedidoSql =
@@ -205,18 +230,78 @@ function inserirProdutos(id_pedido, produtos, res) {
   });
 }
 
-
-/**
- * TODO: Adicionar joins para obter os dados dos produtos e das lojas
- */
 app.get("/pedidos", (req, res) => {
-  const pedidosSql = "SELECT * FROM pedido";
+  const pedidosSql = `
+  SELECT p.id, p.id_usuario, p.id_loja, p.id_dispositivo, p.data_hora, 
+         p.status, p.endereco_entrega, u.nome AS nome_cliente
+  FROM pedido p 
+  INNER JOIN usuario u ON p.id_usuario = u.id
+  ORDER BY p.id`;
   db.query(pedidosSql, (err, results) => {
     if (err) {
       console.error("Erro ao buscar produtos:", err.message);
       return res.status(500).json({ message: err.message });
     }
     res.status(200).json(results);
+  });
+});
+
+// Deletar Loja
+app.delete("/loja", (req, res) => {
+  const { id_loja } = req.body;
+  const lojaSql = "DELETE FROM loja WHERE id = ?";
+  db.query(lojaSql, [id_loja], (err, result) => {
+    if (err) {
+      console.error("Erro ao deletar loja:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    res.status(200).json({ message: "Loja deletada com sucesso" });
+  });
+});
+
+// Deletar Produto
+app.delete("/produto", (req, res) => {
+  const { id_produto } = req.body;
+  const produtoSql = "DELETE FROM produto WHERE id = ?";
+  db.query(produtoSql, [id_produto], (err, result) => {
+    if (err) {
+      console.error("Erro ao deletar produto:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    res.status(200).json({ message: "Produto deletado com sucesso" });
+  });
+});
+
+// Deletar Dispositivo
+app.delete("/dispositivo", (req, res) => {
+  const { id_dispositivo } = req.body;
+  const dispositivoSql = "DELETE FROM dispositivo WHERE id = ?";
+  db.query(dispositivoSql, [id_dispositivo], (err, result) => {
+    if (err) {
+      console.error("Erro ao deletar dispositivo:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    res.status(200).json({ message: "Dispositivo deletado com sucesso" });
+  });
+});
+
+// Deletar Pedido
+app.delete("/pedido", (req, res) => {
+  const { id_pedido } = req.body;
+  const itemPedidoSql = "DELETE FROM item_pedido WHERE id_pedido = ?";
+  db.query(itemPedidoSql, [id_pedido], (err) => {
+    if (err) {
+      console.error("Erro ao deletar item_pedido:", err.message);
+      return res.status(500).json({ message: err.message });
+    }
+    const pedidoSql = "DELETE FROM pedido WHERE id = ?";
+    db.query(pedidoSql, [id_pedido], (err, result) => {
+      if (err) {
+        console.error("Erro ao deletar pedido:", err.message);
+        return res.status(500).json({ message: err.message });
+      }
+      res.status(200).json({ message: "Pedido deletado com sucesso" });
+    });
   });
 });
 
