@@ -20,7 +20,7 @@ router.post("/cadastro", (req, res, next) => {
           res.status(401).send({ mensagem: "Usuário já cadastrado " });
         } else {
           //! Erro aqui
-          bcrypt.hash(req.body.senha, 10, (errBcrypt, hash) => {
+          bcrypt.hash(req.body.password, 10, (errBcrypt, hash) => {
             console.log(hash);
             if (errBcrypt) {
               return res.status(500).send({ error: errBcrypt });
@@ -63,11 +63,11 @@ router.post("/login", (req, res, next) => {
         return res.status(500).send({ error: error });
       }
       if (results.length < 1) {
-        return res.status(401).send({ mensagem: "Falha na Autenticação" });
+        return res.status(401).send({ mensagem: "Falha na Autenticação 1" });
       }
-      bcrypt.compare(req.body.senha, results[0].senha, (err, result) => {
+      bcrypt.compare(req.body.password, results[0].senha, (err, result) => {
         if (err) {
-          return res.status(401).send({ mensagem: "Falha na Autenticação" });
+          return res.status(401).send({ mensagem: "Falha na Autenticação 2" });
         }
         if (result) {
           const token = jwt.sign(
@@ -86,7 +86,7 @@ router.post("/login", (req, res, next) => {
             token: token,
           });
         }
-        return res.status(401).send({ mensagem: "Falha na Autenticação" });
+        return res.status(401).send({ mensagem: "Falha na Autenticação 3" });
       });
     });
   });
